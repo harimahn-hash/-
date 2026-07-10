@@ -114,10 +114,9 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">데이터를 동기화 중입니다...</td></tr>`;
 
-            const { data, error } = await supabaseClient
-                .from('design_requests')
-                .select('*')
-                .order('created_at', { ascending: false });
+           const { data, error } = await supabaseClient
+    .from('design_requests')
+    .select('*');
 
          if (error) {
     tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다. <br> 에러 원인: ${error.message}</td></tr>`;
