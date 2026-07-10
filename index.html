@@ -140,9 +140,9 @@
                         <td class="p-4 text-gray-400 text-xs">${item.req_date}</td>
                         <td class="p-4 text-purple-300 font-medium text-xs">${item.due_date}</td>
                         <td class="p-4">
-                            <select onchange="updateStatus(${item.id}, this.value)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500">
-                                ${statusOptions}
-                            </select>
+                           <select onchange="updateStatus(${item.id}, this.value); updateSelectStyle(this);" class="${getStatusClass(item.status)} border border-transparent rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 transition-all duration-200">
+    ${statusOptions}
+</select>
                         </td>
                         <td class="p-4 text-xs">${linkBtn}</td>
                         <td class="p-4 text-center">
@@ -204,6 +204,22 @@
                 fetchData(); // 삭제 성공 후 목록 즉시 새로고침
             }
         }
+        // 상태별 박스 색상 스타일 정의 함수
+function getStatusClass(status) {
+    switch(status) {
+        case "요청예정": return "bg-gray-700 text-gray-300";
+        case "요청완료": return "bg-blue-600 text-white font-medium";
+        case "진행중": return "bg-amber-500 text-gray-900 font-medium";
+        case "수정중": return "bg-red-600 text-white font-medium";
+        case "제작완료": return "bg-green-600 text-white font-bold shadow-lg shadow-green-900/30 animate-pulse"; // 눈에 띄는 초록 박스!
+        default: return "bg-gray-700 text-white";
+    }
+}
+
+// 드롭다운 선택 시 실시간으로 박스 색상도 바꿔주는 함수
+function updateSelectStyle(el) {
+    el.className = "border border-transparent rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 transition-all duration-200 " + getStatusClass(el.value);
+}
     </script>
 </body>
 </html>
