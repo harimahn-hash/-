@@ -151,4 +151,153 @@
                 .select('*');
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다.<br>에러 원인: ${error.message}
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다.<br>에러 원인: ${error.message}</td></tr>`;
+                return;
+            }
+
+            allRequests = data; // 가져온 원본 저장
+            renderTable(); // 필터 및 정렬 적용하여 화면에 그리기
+        }
+
+        // 2. 필터링 및 정렬 처리 후 화면에 렌더링하는 함수
+        function renderTable() {
+            const brandFilter = document.getElementById('brand-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const sortFilter = document.getElementById('sort-filter').value;
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = "";
+
+            // [Step A] 필터링 처리
+            let filteredData = allRequests.filter(item => {
+                const matchBrand = (brandFilter === "전체" || item.brand === brandFilter);
+                const matchStatus = (statusFilter === "전체" || item.status === statusFilter);
+                return matchBrand && matchStatus;
+            });
+
+            if(filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">조건에 맞는 일정 요청이 없습니다.</td></tr>`;
+                return;
+            }
+
+            // [Step B] 드롭다운 조건별 정렬 처리 (실시간 정렬 자바스크립트 엔진)
+            if (sortFilter === "최신순") {
+                filteredData.sort((a, b) => b.id - a.id);
+            } else if (sortFilter === "예정요청일순") {
+                filteredData.sort((a, b) => (a.req_date || "").localeCompare(b.req_date || ""));
+            } else if (sortFilter === "예상수급일순") {
+                filteredData.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
+            } else if (sortFilter === "진행상태순") {
+                filteredData.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+            } else if (sortFilter === "브랜드순") {
+                filteredData.sort((a, b) => (a.brand || "").localeCompare(b.brand || ""));
+            }
+
+            // [Step C] 화면 그리기
+            filteredData.forEach(item => {
+                const linkBtn = item.link 
+                    ? `<div class="flex items-center gap-2">
+                         <a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline">바로가기</a>
+                         <button onclick="updateLink(${item.id}, '${item.link}')" class="text-gray-500 hover:text-gray-400 text-xs ml-1" title="링크 수정">✏️</button>
+                       </div>` 
+                    : `<button onclick="updateLink(${item.id}, '')" class="text-purple-400 hover:text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-xs bg-purple-950/20 hover:bg-purple-900/30 transition">➕ 링크 추가</button>`;
+                
+                const statusOptions = ["요청예정", "요청완료", "진행중", "수정중", "제작완료"].map(st => 
+                    `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`
+                ).join('');
+
+                const row = `
+                    <tr class="hover:bg-gray-700/30 transition">
+                        <td class="p-4 font-semibold text-white">${item.brand}</td>
+                        <td class="p-4 text-gray-200">${item.title}</td>
+                        <td class="p-4 text-gray-400 text-xs">${item.req_date}</td>
+                        <td class="p-4 text-purple-300 font-medium text-xs">${item.due_date}</td>
+                        <td class="p-4">
+                            <select onchange="updateStatus(${item.id}, this.value)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500">
+                                ${statusOptions}
+                            </select>
+                        </td>
+                        <td class="p-4 text-xs">${linkBtn}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteRow(${item.id}, '${item.title}')" class="text-red-500 hover:text-red-400 font-bold px-2 py-1 rounded text-base transition">✕</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 3. 신규 요청 등록하기 (Create)
+        async function createRow(event) {
+            event.preventDefault();
+            const brand = document.getElementById('input-brand').value;
+            const title = document.getElementById('input-title').value;
+            const req_date = document.getElementById('input-reqDate').value;
+            const due_date = document.getElementById('input-dueDate').value;
+            const link = document.getElementById('input-link').value;
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .insert([{ brand, title, req_date, due_date, link, status: "요청예정" }]);
+
+            if (error) {
+                alert("등록에 실패했습니다: " + error.message);
+            } else {
+                document.getElementById('request-form').reset();
+                fetchData();
+            }
+        }
+
+        // 4. 진행 상태 수정하기 (Update)
+        async function updateStatus(id, newStatus) {
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) {
+                alert("상태 변경에 실패했습니다: " + error.message);
+            } else {
+                // 메모리 내 전역 데이터 상태 갱신 후 재정렬 대응
+                const target = allRequests.find(item => item.id === id);
+                if (target) target.status = newStatus;
+                renderTable(); 
+            }
+        }
+
+        // 5. 기존 요청에 링크 추가/수정하기 (Update Link)
+        async function updateLink(id, currentLink) {
+            const newLink = prompt("인트라넷 요청게시글 링크(URL) 주소를 입력하세요:", currentLink);
+            if (newLink === null) return; 
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .update({ link: newLink })
+                .eq('id', id);
+
+            if (error) {
+                alert("링크 업데이트에 실패했습니다: " + error.message);
+            } else {
+                fetchData();
+            }
+        }
+
+        // 6. 요청 삭제하기 (Delete)
+        async function deleteRow(id, title) {
+            if (!confirm(`'${title}' 요청 일정을 대시보드에서 정말 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert("삭제에 실패했습니다: " + error.message);
+            } else {
+                fetchData();
+            }
+        }
+    </script>
+</body>
+</html>
