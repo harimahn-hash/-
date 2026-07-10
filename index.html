@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADEF 캠페인 디자인 통합 관리 시스템</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase 데이터베이스 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
 
-    <!-- 1. 로그인 화면 -->
     <div id="login-screen" class="flex items-center justify-center min-h-screen">
         <div class="bg-gray-800 p-8 rounded-2xl shadow-xl w-96 border border-gray-700">
             <h2 class="text-2xl font-bold mb-6 text-center text-purple-400">✨ 통합 대시보드 로그인</h2>
@@ -21,18 +18,15 @@
         </div>
     </div>
 
-    <!-- 2. 메인 시스템 화면 -->
     <div id="main-dashboard" class="container mx-auto p-6 hidden">
-        <!-- 헤더 -->
         <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
             <div>
                 <h1 class="text-3xl font-bold text-white">ADEF 디자인 일정 관리 시스템</h1>
-                <p class="text-gray-400 text-sm mt-1">시트 없이 웹에서 직접 입력 및 상태 수정이 가능합니다.</p>
+                <p class="text-gray-400 text-sm mt-1">시트 없이 웹에서 직접 입력, 상태 수정, 삭제가 가능합니다.</p>
             </div>
             <button onclick="fetchData()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-700">🔄 새로고침</button>
         </div>
 
-        <!-- [기획자 입력 영역] -->
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-6 shadow-lg">
             <h3 class="text-lg font-bold text-purple-400 mb-4">📝 신규 디자인 일정 요청 (기획자용)</h3>
             <form id="request-form" class="flex flex-wrap gap-4 items-end" onsubmit="createRow(event)">
@@ -66,7 +60,6 @@
             </form>
         </div>
 
-        <!-- [리스트 및 수정 영역] -->
         <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -75,13 +68,13 @@
                         <th class="p-4">캠페인 / 항목명</th>
                         <th class="p-4">예정요청일</th>
                         <th class="p-4">예상수급일</th>
-                        <th class="p-4">진행 상태 (여기서 즉시 변경 가능)</th>
+                        <th class="p-4">진행 상태</th>
                         <th class="p-4">링크</th>
+                        <th class="p-4 text-center">삭제</th>
                     </tr>
                 </thead>
                 <tbody id="table-body" class="text-sm text-gray-300 divide-y divide-gray-700">
-                    <!-- 데이터 로딩 -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
@@ -89,9 +82,9 @@
     <script>
         const MASTER_CODE = "adef2026";
         
-        // ⚠️ 2단계에서 발급받을 본인의 Supabase 주소와 키를 입력하세요.
+        // ⚠️ 본인의 Supabase 주소와 키를 꼭 올바르게 유지해 주세요!
         const SUPABASE_URL = "https://wnuvsowwjwfgatzmdynj.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudXZzb3d3andmZ2F0em1keW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjE1OTMsImV4cCI6MjA5OTIzNzU5M30.63xL4XbHW4iGht4PW7EpYsjUXdrGrhRt9VvnWmltSxk";
+        const SUPABASE_ANON_KEY = "여기에_본인의_SUPABASE_ANON_KEY_입력";
         
         let supabaseClient;
 
@@ -101,7 +94,6 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-dashboard').classList.remove('hidden');
                 
-                // Supabase 초기화 및 데이터 로드
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 fetchData();
             } else {
@@ -112,27 +104,29 @@
         // 1. 데이터 불러오기 (Read)
         async function fetchData() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">데이터를 동기화 중입니다...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">데이터를 동기화 중입니다...</td></tr>`;
 
-           const { data, error } = await supabaseClient
-    .from('design_requests')
-    .select('*');
+            const { data, error } = await supabaseClient
+                .from('design_requests')
+                .select('*');
 
-         if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다. <br> 에러 원인: ${error.message}</td></tr>`;
-    return;
-}
-
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">등록된 일정 요청이 없습니다.</td></tr>`;
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다.<br>에러 원인: ${error.message}</td></tr>`;
                 return;
             }
+
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">등록된 일정 요청이 없습니다.</td></tr>`;
+                return;
+            }
+
+            // 최신 글이 위로 오도록 자바스크립트로 정렬 (created_at 에러 방지용)
+            data.sort((a, b) => b.id - a.id);
 
             tbody.innerHTML = "";
             data.forEach(item => {
                 const linkBtn = item.link ? `<a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline">바로가기</a>` : `<span class="text-gray-600">-</span>`;
                 
-                // 상태 변경 드롭다운 생성 (디자이너가 웹에서 바로 수정할 수 있는 핵심 기능)
                 const statusOptions = ["요청예정", "요청완료", "진행중", "수정중", "제작완료"].map(st => 
                     `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`
                 ).join('');
@@ -149,6 +143,9 @@
                             </select>
                         </td>
                         <td class="p-4 text-xs">${linkBtn}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteRow(${item.id}, '${item.title}')" class="text-red-500 hover:text-red-400 font-bold px-2 py-1 rounded text-base transition">✕</button>
+                        </td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
@@ -172,11 +169,11 @@
                 alert("등록에 실패했습니다: " + error.message);
             } else {
                 document.getElementById('request-form').reset();
-                fetchData(); // 등록 후 리스트 갱신
+                fetchData();
             }
         }
 
-        // 3. 진행 상태 실시간 수정하기 (Update)
+        // 3. 진행 상태 수정하기 (Update)
         async function updateStatus(id, newStatus) {
             const { error } = await supabaseClient
                 .from('design_requests')
@@ -185,9 +182,24 @@
 
             if (error) {
                 alert("상태 변경에 실패했습니다: " + error.message);
+            }
+        }
+
+        // 4. 요청 삭제하기 (Delete) - [새로 추가된 기능]
+        async function deleteRow(id, title) {
+            if (!confirm(`'${title}' 요청 일정을 대시보드에서 정말 삭제하시겠습니까?`)) {
+                return; // 취소 누르면 함수 중단
+            }
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert("삭제에 실패했습니다: " + error.message);
             } else {
-                // 성공 시 별도 새로고침 없이 조용히 반영됨
-                console.log(`ID ${id} 상태가 ${newStatus}(으)로 변경됨`);
+                fetchData(); // 삭제 성공 후 목록 즉시 새로고침
             }
         }
     </script>
