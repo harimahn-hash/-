@@ -127,7 +127,12 @@
 
             tbody.innerHTML = "";
             data.forEach(item => {
-                const linkBtn = item.link ? `<a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline">바로가기</a>` : `<span class="text-gray-600">-</span>`;
+             const linkBtn = item.link 
+    ? `<div class="flex items-center gap-2">
+         <a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline">바로가기</a>
+         <button onclick="updateLink(${item.id}, '${item.link}')" class="text-gray-500 hover:text-gray-400 text-xs ml-1" title="링크 수정">✏️</button>
+       </div>` 
+    : `<button onclick="updateLink(${item.id}, '')" class="text-purple-400 hover:text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-xs bg-purple-950/20 hover:bg-purple-900/30 transition">➕ 링크 추가</button>`;
                 
                 const statusOptions = ["요청예정", "요청완료", "진행중", "수정중", "제작완료"].map(st => 
                     `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`
@@ -220,6 +225,25 @@ function getStatusClass(status) {
 function updateSelectStyle(el) {
     el.className = "border border-transparent rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 transition-all duration-200 " + getStatusClass(el.value);
 }
+        // 5. 기존 요청에 링크 추가/수정하기 - [새로 추가할 기능]
+        async function updateLink(id, currentLink) {
+            // 브라우저 팝업창을 띄워 링크 주소를 입력받습니다.
+            const newLink = prompt("인트라넷 요청게시글 링크(URL) 주소를 입력하세요:", currentLink);
+            
+            // 사용자가 취소를 누르거나 아무것도 입력하지 않은 경우 중단
+            if (newLink === null) return; 
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .update({ link: newLink })
+                .eq('id', id);
+
+            if (error) {
+                alert("링크 업데이트에 실패했습니다: " + error.message);
+            } else {
+                fetchData(); // 성공 시 대시보드 목록 새로고침
+            }
+        }
     </script>
 </body>
 </html>
