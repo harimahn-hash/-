@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEF CR-3 아모레 디자인 일정 관리 시스템</title>
+    <title>ADEF 캠페인 디자인 통합 관리 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -21,14 +21,14 @@
     <div id="main-dashboard" class="container mx-auto p-6 hidden">
         <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-white">ADEF CR-3 아모레 디자인 일정 관리 시스템</h1>
-                <p class="text-gray-400 text-sm mt-1">시트 없이 웹에서 직접 입력, 상태 수정, 삭제가 가능합니다.</p>
+                <h1 class="text-3xl font-bold text-white">ADEF 디자인 일정 관리 시스템</h1>
+                <p class="text-gray-400 text-sm mt-1">실시간 필터링 및 다중 조건 정렬 기능이 지원됩니다.</p>
             </div>
             <button onclick="fetchData()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-700">🔄 새로고침</button>
         </div>
 
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-6 shadow-lg">
-            <h3 class="text-lg font-bold text-purple-400 mb-4">📝 신규 디자인 일정 요청 </h3>
+            <h3 class="text-lg font-bold text-purple-400 mb-4">📝 신규 디자인 일정 요청 (기획자용)</h3>
             <form id="request-form" class="flex flex-wrap gap-4 items-end" onsubmit="createRow(event)">
                 <div class="flex-1 min-w-[150px]">
                     <label class="block text-xs text-gray-400 mb-1">브랜드</label>
@@ -39,7 +39,7 @@
                         <option value="려">려</option>
                         <option value="롱테이크">롱테이크</option>
                         <option value="스킨유">스킨유</option>
-    <option value="에스트라">에스트라</option>
+                        <option value="에스트라">에스트라</option>
                     </select>
                 </div>
                 <div class="flex-[2] min-w-[200px]">
@@ -60,6 +60,43 @@
                 </div>
                 <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition h-[38px]">요청 등록</button>
             </form>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 flex flex-wrap gap-4 items-center">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-semibold">브랜드 필터</label>
+                <select id="brand-filter" onchange="renderTable()" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white w-44 focus:outline-none focus:border-purple-500">
+                    <option value="전체">전체 브랜드</option>
+                    <option value="헤어바디 통합">헤어바디 통합</option>
+                    <option value="일리윤">일리윤</option>
+                    <option value="라보에이치">라보에이치</option>
+                    <option value="려">려</option>
+                    <option value="롱테이크">롱테이크</option>
+                    <option value="스킨유">스킨유</option>
+                    <option value="에스트라">에스트라</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-semibold">진행 상태</label>
+                <select id="status-filter" onchange="renderTable()" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white w-44 focus:outline-none focus:border-purple-500">
+                    <option value="전체">전체 상태</option>
+                    <option value="요청예정">요청예정</option>
+                    <option value="요청완료">요청완료</option>
+                    <option value="진행중">진행중</option>
+                    <option value="수정중">수정중</option>
+                    <option value="제작완료">제작완료</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-semibold text-purple-400">📊 정렬 기준</label>
+                <select id="sort-filter" onchange="renderTable()" class="bg-gray-700 border border-purple-500/50 rounded-lg p-2 text-sm text-white w-48 focus:outline-none focus:border-purple-500 font-medium">
+                    <option value="최신순">최신 등록순</option>
+                    <option value="예정요청일순">예정요청일 빠른순</option>
+                    <option value="예상수급일순">예상수급일 빠른순</option>
+                    <option value="진행상태순">진행 상태순</option>
+                    <option value="브랜드순">브랜드 가나다순</option>
+                </select>
+            </div>
         </div>
 
         <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
@@ -84,11 +121,12 @@
     <script>
         const MASTER_CODE = "adef2026";
         
-        // ⚠️ 본인의 Supabase 주소와 키를 꼭 올바르게 유지해 주세요!
+        // ⚠️ 본인의 Supabase 주소와 키를 입력해 주세요!
         const SUPABASE_URL = "https://wnuvsowwjwfgatzmdynj.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudXZzb3d3andmZ2F0em1keW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjE1OTMsImV4cCI6MjA5OTIzNzU5M30.63xL4XbHW4iGht4PW7EpYsjUXdrGrhRt9VvnWmltSxk";
         
         let supabaseClient;
+        let allRequests = []; // 실시간 정렬 및 필터를 위한 전역 데이터 저장소
 
         function checkCode() {
             const input = document.getElementById('entry-code').value;
@@ -103,7 +141,7 @@
             }
         }
 
-        // 1. 데이터 불러오기 (Read)
+        // 1. 데이터베이스에서 원본 가져오기 (Read)
         async function fetchData() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">데이터를 동기화 중입니다...</td></tr>`;
@@ -113,137 +151,4 @@
                 .select('*');
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다.<br>에러 원인: ${error.message}</td></tr>`;
-                return;
-            }
-
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">등록된 일정 요청이 없습니다.</td></tr>`;
-                return;
-            }
-
-            // 최신 글이 위로 오도록 자바스크립트로 정렬 (created_at 에러 방지용)
-            data.sort((a, b) => b.id - a.id);
-
-            tbody.innerHTML = "";
-            data.forEach(item => {
-             const linkBtn = item.link 
-    ? `<div class="flex items-center gap-2">
-         <a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline">바로가기</a>
-         <button onclick="updateLink(${item.id}, '${item.link}')" class="text-gray-500 hover:text-gray-400 text-xs ml-1" title="링크 수정">✏️</button>
-       </div>` 
-    : `<button onclick="updateLink(${item.id}, '')" class="text-purple-400 hover:text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-xs bg-purple-950/20 hover:bg-purple-900/30 transition">➕ 링크 추가</button>`;
-                
-                const statusOptions = ["요청예정", "요청완료", "진행중", "수정중", "제작완료"].map(st => 
-                    `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`
-                ).join('');
-
-                const row = `
-                    <tr class="hover:bg-gray-700/30 transition">
-                        <td class="p-4 font-semibold text-white">${item.brand}</td>
-                        <td class="p-4 text-gray-200">${item.title}</td>
-                        <td class="p-4 text-gray-400 text-xs">${item.req_date}</td>
-                        <td class="p-4 text-purple-300 font-medium text-xs">${item.due_date}</td>
-                        <td class="p-4">
-                           <select onchange="updateStatus(${item.id}, this.value); updateSelectStyle(this);" class="${getStatusClass(item.status)} border border-transparent rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 transition-all duration-200">
-    ${statusOptions}
-</select>
-                        </td>
-                        <td class="p-4 text-xs">${linkBtn}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="deleteRow(${item.id}, '${item.title}')" class="text-red-500 hover:text-red-400 font-bold px-2 py-1 rounded text-base transition">✕</button>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        }
-
-        // 2. 신규 요청 등록하기 (Create)
-        async function createRow(event) {
-            event.preventDefault();
-            const brand = document.getElementById('input-brand').value;
-            const title = document.getElementById('input-title').value;
-            const req_date = document.getElementById('input-reqDate').value;
-            const due_date = document.getElementById('input-dueDate').value;
-            const link = document.getElementById('input-link').value;
-
-            const { error } = await supabaseClient
-                .from('design_requests')
-                .insert([{ brand, title, req_date, due_date, link, status: "요청예정" }]);
-
-            if (error) {
-                alert("등록에 실패했습니다: " + error.message);
-            } else {
-                document.getElementById('request-form').reset();
-                fetchData();
-            }
-        }
-
-        // 3. 진행 상태 수정하기 (Update)
-        async function updateStatus(id, newStatus) {
-            const { error } = await supabaseClient
-                .from('design_requests')
-                .update({ status: newStatus })
-                .eq('id', id);
-
-            if (error) {
-                alert("상태 변경에 실패했습니다: " + error.message);
-            }
-        }
-
-        // 4. 요청 삭제하기 (Delete) - [새로 추가된 기능]
-        async function deleteRow(id, title) {
-            if (!confirm(`'${title}' 요청 일정을 대시보드에서 정말 삭제하시겠습니까?`)) {
-                return; // 취소 누르면 함수 중단
-            }
-
-            const { error } = await supabaseClient
-                .from('design_requests')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                alert("삭제에 실패했습니다: " + error.message);
-            } else {
-                fetchData(); // 삭제 성공 후 목록 즉시 새로고침
-            }
-        }
-        // 상태별 박스 색상 스타일 정의 함수
-function getStatusClass(status) {
-    switch(status) {
-        case "요청예정": return "bg-gray-700 text-gray-300";
-        case "요청완료": return "bg-blue-600 text-white font-medium";
-        case "진행중": return "bg-amber-500 text-gray-900 font-medium";
-        case "수정중": return "bg-red-600 text-white font-medium";
-        case "제작완료": return "bg-green-600 text-white font-bold shadow-lg shadow-green-900/30 animate-pulse"; // 눈에 띄는 초록 박스!
-        default: return "bg-gray-700 text-white";
-    }
-}
-
-// 드롭다운 선택 시 실시간으로 박스 색상도 바꿔주는 함수
-function updateSelectStyle(el) {
-    el.className = "border border-transparent rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 transition-all duration-200 " + getStatusClass(el.value);
-}
-        // 5. 기존 요청에 링크 추가/수정하기 - [새로 추가할 기능]
-        async function updateLink(id, currentLink) {
-            // 브라우저 팝업창을 띄워 링크 주소를 입력받습니다.
-            const newLink = prompt("인트라넷 요청게시글 링크(URL) 주소를 입력하세요:", currentLink);
-            
-            // 사용자가 취소를 누르거나 아무것도 입력하지 않은 경우 중단
-            if (newLink === null) return; 
-
-            const { error } = await supabaseClient
-                .from('design_requests')
-                .update({ link: newLink })
-                .eq('id', id);
-
-            if (error) {
-                alert("링크 업데이트에 실패했습니다: " + error.message);
-            } else {
-                fetchData(); // 성공 시 대시보드 목록 새로고침
-            }
-        }
-    </script>
-</body>
-</html>
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400">데이터를 가져오지 못했습니다.<br>에러 원인: ${error.message}
