@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADEF 캠페인 디자인 일정 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-xl w-96 border border-gray-700">
+            <h2 class="text-2xl font-bold mb-6 text-center text-purple-400">✨ 디자인 대시보드 로그인</h2>
+            <p class="text-sm text-gray-400 mb-4 text-center">공유받은 입장 코드를 입력하세요.</p>
+            <input type="password" id="entry-code" class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 mb-4 focus:outline-none focus:border-purple-500 text-center text-xl tracking-widest" placeholder="••••••••">
+            <button onclick="checkCode()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold p-3 rounded-lg transition duration-200">입장하기</button>
+            <p id="login-error" class="text-red-400 text-sm mt-3 text-center hidden">코드가 일치하지 않습니다.</p>
+        </div>
+    </div>
+
+    <div id="main-dashboard" class="container mx-auto p-6 hidden">
+        <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">브랜드 캠페인 일정 대시보드</h1>
+                <p class="text-gray-400 text-sm mt-1">기획자 요청 일정 및 디자이너 마감 현황</p>
+            </div>
+            <span class="bg-gray-800 px-4 py-2 rounded-full text-xs text-gray-400 border border-gray-700">📆 기준일: 2026년 7월</span>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 flex flex-wrap gap-4 items-center">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-semibold">브랜드 필터</label>
+                <select id="brand-filter" onchange="renderTable()" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-purple-500 w-44">
+                    <option value="전체">전체 브랜드</option>
+                    <option value="헤어바디 통합">헤어바디 통합</option>
+                    <option value="일리윤">일리윤</option>
+                    <option value="라보에이치">라보에이치</option>
+                    <option value="려">려</option>
+                    <option value="롱테이크">롱테이크</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-semibold">진행 상태</label>
+                <select id="status-filter" onchange="renderTable()" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-purple-500 w-44">
+                    <option value="전체">전체 상태</option>
+                    <option value="요청예정">요청예정</option>
+                    <option value="요청완료">요청완료</option>
+                    <option value="수정중">수정중</option>
+                    <option value="제작완료">제작완료</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-750 border-b border-gray-700 text-gray-300 text-sm font-semibold">
+                        <th class="p-4">요청 ID</th>
+                        <th class="p-4">브랜드</th>
+                        <th class="p-4">캠페인 / 항목명</th>
+                        <th class="p-4">예정요청일</th>
+                        <th class="p-4">예상수급일</th>
+                        <th class="p-4">진행 상태</th>
+                        <th class="p-4">링크</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="text-sm text-gray-300 divide-y divide-gray-700">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 초기 비밀번호 설정
+        const MASTER_CODE = "adef2026";
+
+        // 2026년 7월 정규화된 샘플 데이터셋
+        const dataset = [
+            { id: "REQ-001", brand: "헤어바디 통합", title: "생필품의 모든것", reqDate: "2026-07-06", dueDate: "2026-07-07", status: "수정중", link: "https://intranet.adef.co.kr/creative/view?idx=50534" },
+            { id: "REQ-002", brand: "일리윤", title: "생필품의 모든것", reqDate: "2026-07-06", dueDate: "2026-07-07", status: "수정중", link: "https://intranet.adef.co.kr/creative/view?idx=50497" },
+            { id: "REQ-003", brand: "라보에이치", title: "카쇼라 소재", reqDate: "2026-07-07", dueDate: "2026-07-08", status: "제작완료", link: "" },
+            { id: "REQ-004", brand: "려", title: "상시 소재", reqDate: "2026-07-02", dueDate: "2026-07-06", status: "제작완료", link: "https://intranet.adef.co.kr/creative/view?idx=50116" },
+            { id: "REQ-005", brand: "려", title: "에센스 오특", reqDate: "2026-07-01", dueDate: "2026-07-02", status: "제작완료", link: "https://intranet.adef.co.kr/creative/view?idx=50361" },
+            { id: "REQ-006", brand: "려", title: "볼류머 오특 소재", reqDate: "2026-07-06", dueDate: "2026-07-08", status: "수정중", link: "https://intranet.adef.co.kr/creative/view?idx=50504" },
+            { id: "REQ-007", brand: "려", title: "온라인몰 소재 VARI", reqDate: "2026-07-07", dueDate: "2026-07-08", status: "요청완료", link: "https://intranet.adef.co.kr/creative/view?idx=50576" },
+            { id: "REQ-008", brand: "려", title: "샴푸 오특 소재", reqDate: "2026-07-13", dueDate: "2026-07-14", status: "요청예정", link: "" },
+            { id: "REQ-009", brand: "롱테이크", title: "헤어오일 소재", reqDate: "2026-07-01", dueDate: "2026-07-02", status: "제작완료", link: "https://intranet.adef.co.kr/creative/view?idx=50351" }
+        ];
+
+        // 로그인 검증 함수
+        function checkCode() {
+            const input = document.getElementById('entry-code').value;
+            if(input === MASTER_CODE) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-dashboard').classList.remove('hidden');
+                renderTable();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        // 상태값별 컬러 배지 태그 리턴 함수
+        function getStatusBadge(status) {
+            const styles = {
+                "요청예정": "bg-gray-700 text-gray-300",
+                "요청완료": "bg-blue-900/50 text-blue-300 border border-blue-700",
+                "수정중": "bg-red-900/50 text-red-300 border border-red-700",
+                "제작완료": "bg-green-900/50 text-green-300 border border-green-700"
+            };
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-600'}">${status}</span>`;
+        }
+
+        // 테이블 동적 렌더링 함수
+        function renderTable() {
+            const brandFilter = document.getElementById('brand-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = "";
+
+            const filteredData = dataset.filter(item => {
+                const matchBrand = (brandFilter === "전체" || item.brand === brandFilter);
+                const matchStatus = (statusFilter === "전체" || item.status === statusFilter);
+                return matchBrand && matchStatus;
+            });
+
+            if(filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">조건에 맞는 일정 데이터가 없습니다.</td></tr>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const linkBtn = item.link ? `<a href="${item.link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline font-medium">바로가기</a>` : `<span class="text-gray-600">-</span>`;
+                const row = `
+                    <tr class="hover:bg-gray-750/50 transition">
+                        <td class="p-4 font-mono text-xs text-gray-400">${item.id}</td>
+                        <td class="p-4 font-semibold text-white">${item.brand}</td>
+                        <td class="p-4 text-gray-200">${item.title}</td>
+                        <td class="p-4 text-gray-400 text-xs">${item.reqDate}</td>
+                        <td class="p-4 text-purple-300 font-medium text-xs">${item.dueDate}</td>
+                        <td class="p-4">${getStatusBadge(item.status)}</td>
+                        <td class="p-4 text-xs">${linkBtn}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
