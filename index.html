@@ -180,6 +180,47 @@
                 tbody.innerHTML += row;
             });
         }
+        // ⚠️ 1단계에서 복사한 Apps Script 주소를 아래에 넣으세요!
+        const GOOGLE_SCRIPT_URL = "여기에_스크립트_주소를_넣으세요";
+
+        // 웹 폼 데이터를 구글 시트로 전송하는 함수
+        function submitForm(event) {
+            event.preventDefault(); // 페이지 새로고침 방지
+            
+            const btn = document.getElementById('submit-btn');
+            const msg = document.getElementById('form-msg');
+            btn.innerText = "전송 중...";
+            btn.disabled = true;
+
+            const formData = new URLSearchParams();
+            formData.append('brand', document.getElementById('input-brand').value);
+            formData.append('title', document.getElementById('input-title').value);
+            formData.append('reqDate', document.getElementById('input-reqDate').value);
+            formData.append('dueDate', document.getElementById('input-dueDate').value);
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors' // 보안 정책 우회
+            })
+            .then(() => {
+                btn.innerText = "요청 등록";
+                btn.disabled = false;
+                msg.classList.remove('hidden');
+                document.getElementById('request-form').reset(); // 폼 초기화
+                
+                // 전송 성공 후 자동으로 데이터 새로고침
+                setTimeout(() => {
+                    msg.classList.add('hidden');
+                    fetchGoogleSheet(); 
+                }, 2000);
+            })
+            .catch(error => {
+                alert("전송 중 오류가 발생했습니다.");
+                btn.innerText = "요청 등록";
+                btn.disabled = false;
+            });
+        }
     </script>
 </body>
 </html>
