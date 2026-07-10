@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEF 캠페인 디자인 통합 관리 시스템</title>
+    <title>ADEF CR-3 아모레 디자인 일정관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -21,8 +21,8 @@
     <div id="main-dashboard" class="container mx-auto p-6 hidden">
         <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-white">ADEF 디자인 일정 관리 시스템</h1>
-                <p class="text-gray-400 text-sm mt-1">실시간 필터링 및 다중 조건 정렬 기능이 지원됩니다.</p>
+                <h1 class="text-3xl font-bold text-white">ADEF CR-3 아모레 디자인 일정관리</h1>
+                <p class="text-gray-400 text-sm mt-1">제작완료된 항목은 자동으로 보기가 편하게 그레이아웃 처리됩니다.</p>
             </div>
             <button onclick="fetchData()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-700">🔄 새로고침</button>
         </div>
@@ -105,8 +105,8 @@
                     <tr class="bg-gray-750 border-b border-gray-700 text-gray-300 text-sm font-semibold">
                         <th class="p-4">브랜드</th>
                         <th class="p-4">캠페인 / 항목명</th>
-                        <th class="p-4">예정요청일</th>
-                        <th class="p-4">예상수급일</th>
+                        <th class="p-4">예정요청일 (클릭 수정)</th>
+                        <th class="p-4">예상수급일 (클릭 수정)</th>
                         <th class="p-4">진행 상태</th>
                         <th class="p-4">링크</th>
                         <th class="p-4 text-center">삭제</th>
@@ -121,12 +121,12 @@
     <script>
         const MASTER_CODE = "adef2026";
         
-        // ⚠️ 본인의 Supabase 주소와 키를 입력해 주세요!
         const SUPABASE_URL = "https://wnuvsowwjwfgatzmdynj.supabase.co";
+        // ⚠️ 성공하셨던 수파베이스 ANON_KEY를 여기에 붙여넣어 주세요!
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudXZzb3d3andmZ2F0em1keW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjE1OTMsImV4cCI6MjA5OTIzNzU5M30.63xL4XbHW4iGht4PW7EpYsjUXdrGrhRt9VvnWmltSxk";
         
         let supabaseClient;
-        let allRequests = []; // 실시간 정렬 및 필터를 위한 전역 데이터 저장소
+        let allRequests = []; 
 
         function checkCode() {
             const input = document.getElementById('entry-code').value;
@@ -141,7 +141,6 @@
             }
         }
 
-        // 1. 데이터베이스에서 원본 가져오기 (Read)
         async function fetchData() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">데이터를 동기화 중입니다...</td></tr>`;
@@ -155,11 +154,10 @@
                 return;
             }
 
-            allRequests = data; // 가져온 원본 저장
-            renderTable(); // 필터 및 정렬 적용하여 화면에 그리기
+            allRequests = data; 
+            renderTable(); 
         }
 
-        // 2. 필터링 및 정렬 처리 후 화면에 렌더링하는 함수
         function renderTable() {
             const brandFilter = document.getElementById('brand-filter').value;
             const statusFilter = document.getElementById('status-filter').value;
@@ -167,7 +165,6 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
 
-            // [Step A] 필터링 처리
             let filteredData = allRequests.filter(item => {
                 const matchBrand = (brandFilter === "전체" || item.brand === brandFilter);
                 const matchStatus = (statusFilter === "전체" || item.status === statusFilter);
@@ -179,7 +176,7 @@
                 return;
             }
 
-            // [Step B] 드롭다운 조건별 정렬 처리 (실시간 정렬 자바스크립트 엔진)
+            // 정렬 처리
             if (sortFilter === "최신순") {
                 filteredData.sort((a, b) => b.id - a.id);
             } else if (sortFilter === "예정요청일순") {
@@ -192,7 +189,6 @@
                 filteredData.sort((a, b) => (a.brand || "").localeCompare(b.brand || ""));
             }
 
-            // [Step C] 화면 그리기
             filteredData.forEach(item => {
                 const linkBtn = item.link 
                     ? `<div class="flex items-center gap-2">
@@ -205,12 +201,22 @@
                     `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`
                 ).join('');
 
+                // [추가된 로직] 제작완료 상태일 때 디자인 클래스 분기처리
+                const isCompleted = item.status === "제작완료";
+                const rowClass = isCompleted 
+                    ? "bg-gray-950/40 text-gray-500 opacity-45 grayscale-[30%] transition-all duration-300" 
+                    : "hover:bg-gray-700/30 text-gray-200 transition-all duration-300";
+
                 const row = `
-                    <tr class="hover:bg-gray-700/30 transition">
-                        <td class="p-4 font-semibold text-white">${item.brand}</td>
-                        <td class="p-4 text-gray-200">${item.title}</td>
-                        <td class="p-4 text-gray-400 text-xs">${item.req_date}</td>
-                        <td class="p-4 text-purple-300 font-medium text-xs">${item.due_date}</td>
+                    <tr class="${rowClass}">
+                        <td class="p-4 font-semibold ${isCompleted ? 'text-gray-500' : 'text-white'}">${item.brand}</td>
+                        <td class="p-4 ${isCompleted ? 'text-gray-500 line-through decoration-gray-700' : 'text-gray-200'}">${item.title}</td>
+                        <td class="p-4">
+                            <input type="date" value="${item.req_date || ''}" onchange="updateDate(${item.id}, 'req_date', this.value)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 ${isCompleted ? 'opacity-50' : ''}">
+                        </td>
+                        <td class="p-4">
+                            <input type="date" value="${item.due_date || ''}" onchange="updateDate(${item.id}, 'due_date', this.value)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-purple-300 font-medium focus:outline-none focus:border-purple-500 ${isCompleted ? 'opacity-50' : ''}">
+                        </td>
                         <td class="p-4">
                             <select onchange="updateStatus(${item.id}, this.value)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500">
                                 ${statusOptions}
@@ -226,7 +232,6 @@
             });
         }
 
-        // 3. 신규 요청 등록하기 (Create)
         async function createRow(event) {
             event.preventDefault();
             const brand = document.getElementById('input-brand').value;
@@ -247,7 +252,6 @@
             }
         }
 
-        // 4. 진행 상태 수정하기 (Update)
         async function updateStatus(id, newStatus) {
             const { error } = await supabaseClient
                 .from('design_requests')
@@ -257,14 +261,30 @@
             if (error) {
                 alert("상태 변경에 실패했습니다: " + error.message);
             } else {
-                // 메모리 내 전역 데이터 상태 갱신 후 재정렬 대응
                 const target = allRequests.find(item => item.id === id);
                 if (target) target.status = newStatus;
                 renderTable(); 
             }
         }
 
-        // 5. 기존 요청에 링크 추가/수정하기 (Update Link)
+        async function updateDate(id, fieldName, newDate) {
+            const updateObj = {};
+            updateObj[fieldName] = newDate;
+
+            const { error } = await supabaseClient
+                .from('design_requests')
+                .update(updateObj)
+                .eq('id', id);
+
+            if (error) {
+                alert("날짜 변경에 실패했습니다: " + error.message);
+            } else {
+                const target = allRequests.find(item => item.id === id);
+                if (target) target[fieldName] = newDate;
+                renderTable();
+            }
+        }
+
         async function updateLink(id, currentLink) {
             const newLink = prompt("인트라넷 요청게시글 링크(URL) 주소를 입력하세요:", currentLink);
             if (newLink === null) return; 
@@ -281,7 +301,6 @@
             }
         }
 
-        // 6. 요청 삭제하기 (Delete)
         async function deleteRow(id, title) {
             if (!confirm(`'${title}' 요청 일정을 대시보드에서 정말 삭제하시겠습니까?`)) {
                 return;
@@ -301,3 +320,4 @@
     </script>
 </body>
 </html>
+
