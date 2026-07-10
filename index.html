@@ -29,6 +29,42 @@
 
         <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 flex flex-wrap gap-4 items-center">
             <div>
+                <!-- [추가된 영역] 기획자 일정 입력 폼 -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-6 shadow-lg">
+            <h3 class="text-lg font-bold text-white mb-4">📝 신규 디자인 일정 요청</h3>
+            
+            <form id="request-form" class="flex flex-wrap gap-4 items-end" onsubmit="submitForm(event)">
+                <div class="flex-1 min-w-[150px]">
+                    <label class="block text-xs text-gray-400 mb-1">브랜드</label>
+                    <select id="input-brand" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white focus:border-purple-500">
+                        <option value="헤어바디 통합">헤어바디 통합</option>
+                        <option value="일리윤">일리윤</option>
+                        <option value="라보에이치">라보에이치</option>
+                        <option value="려">려</option>
+                    </select>
+                </div>
+                
+                <div class="flex-[2] min-w-[200px]">
+                    <label class="block text-xs text-gray-400 mb-1">캠페인 / 항목명</label>
+                    <input type="text" id="input-title" required placeholder="예: 생필품의 모든것 소재" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white focus:border-purple-500">
+                </div>
+
+                <div class="flex-1 min-w-[130px]">
+                    <label class="block text-xs text-gray-400 mb-1">예정요청일</label>
+                    <input type="date" id="input-reqDate" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white focus:border-purple-500">
+                </div>
+
+                <div class="flex-1 min-w-[130px]">
+                    <label class="block text-xs text-gray-400 mb-1">예상수급일</label>
+                    <input type="date" id="input-dueDate" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm text-white focus:border-purple-500">
+                </div>
+
+                <button type="submit" id="submit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition h-[38px]">
+                    요청 등록
+                </button>
+            </form>
+            <p id="form-msg" class="text-xs mt-3 hidden text-green-400">✅ 구글 시트에 정상적으로 등록되었습니다! 새로고침하여 확인하세요.</p>
+        </div>
                 <label class="block text-xs text-gray-400 mb-1 font-semibold">브랜드 필터</label>
                 <select id="brand-filter" onchange="renderTable()" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-purple-500 w-44">
                     <option value="전체">전체 브랜드</option>
